@@ -1,0 +1,236 @@
+<template>
+  <div>
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-400 font-medium uppercase tracking-wide mb-1">Total Barang</p>
+        <p class="text-3xl font-bold text-slate-800">{{ barangStore.barangList.length }}</p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-400 font-medium uppercase tracking-wide mb-1">Stok Menipis</p>
+        <p class="text-3xl font-bold text-orange-500">{{ stokMenipis }}</p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-400 font-medium uppercase tracking-wide mb-1">Total Kategori</p>
+        <p class="text-3xl font-bold text-slate-800">{{ kategoriStore.kategoriList.length }}</p>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+        <h2 class="font-semibold text-slate-700">Daftar Barang</h2>
+        <div class="flex gap-3">
+          <input
+            v-model="search"
+            placeholder="Cari barang..."
+            class="text-sm px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-slate-400 w-52"
+          />
+          <button
+            @click="exportExcel"
+            class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition"
+          >
+            📥 Export Excel
+          </button>
+          <button
+            @click="showModal = true"
+            class="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition"
+          >
+            <span class="text-base leading-none">+</span> Tambah Barang
+          </button>
+        </div>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+            <th class="text-left px-6 py-3 font-medium">#</th>
+            <th class="text-left px-6 py-3 font-medium">Nama Barang</th>
+            <th class="text-left px-6 py-3 font-medium">Kategori</th>
+            <th class="text-left px-6 py-3 font-medium">Harga Jual</th>
+            <th class="text-left px-6 py-3 font-medium">Stok</th>
+            <th class="text-left px-6 py-3 font-medium">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          <tr v-if="barangFiltered.length === 0">
+            <td colspan="6" class="text-center py-12 text-slate-400">Belum ada barang</td>
+          </tr>
+          <tr v-for="(b, i) in barangFiltered" :key="b.id" class="hover:bg-slate-50 transition">
+            <td class="px-6 py-4 text-slate-400">{{ i + 1 }}</td>
+            <td class="px-6 py-4 font-medium text-slate-700">{{ b.nama }}</td>
+            <td class="px-6 py-4">
+              <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-lg">{{ b.kategori?.nama }}</span>
+            </td>
+            <td class="px-6 py-4 text-slate-700">Rp {{ b.harga.toLocaleString('id-ID') }}</td>
+            <td class="px-6 py-4">
+              <span
+                class="text-xs font-semibold px-2 py-1 rounded-lg"
+                :class="b.stok <= 5 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'"
+              >
+                {{ b.stok }} pcs
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex gap-2">
+                <button @click="editBarang(b)" class="text-xs px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 transition">Edit</button>
+                <button @click="hapus(b.id)" class="text-xs px-3 py-1.5 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition">Hapus</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Tambah/Edit Barang -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeModal"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="font-semibold text-slate-800 text-base">{{ editMode ? 'Edit Barang' : 'Tambah Barang Baru' }}</h3>
+          <button @click="closeModal" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Nama Barang</label>
+            <input
+              v-model="form.nama"
+              placeholder="Misal: Indomie Goreng"
+              class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-500 mb-1 block">Harga Jual (Rp)</label>
+              <input
+                v-model.number="form.harga"
+                type="number"
+                placeholder="3500"
+                class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-500 mb-1 block">Stok</label>
+              <input
+                v-model.number="form.stok"
+                type="number"
+                placeholder="50"
+                class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Kategori</label>
+            <select
+              v-model.number="form.kategoriId"
+              class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white"
+            >
+              <option value="" disabled>Pilih kategori</option>
+              <option v-for="k in kategoriStore.kategoriList" :key="k.id" :value="k.id">{{ k.nama }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button @click="closeModal" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">Batal</button>
+          <button
+            @click="simpan"
+            :disabled="loading"
+            class="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-medium transition disabled:opacity-40"
+          >
+            {{ loading ? 'Menyimpan...' : (editMode ? 'Simpan Perubahan' : 'Tambah Barang') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import * as XLSX from 'xlsx'
+import { useBarangStore } from '../stores/barang'
+import { useKategoriStore } from '../stores/kategori'
+
+const barangStore = useBarangStore()
+const kategoriStore = useKategoriStore()
+
+const search = ref('')
+const showModal = ref(false)
+const editMode = ref(false)
+const loading = ref(false)
+const editId = ref<number | null>(null)
+const form = ref({ nama: '', harga: 0, stok: 0, kategoriId: '' as any })
+
+const stokMenipis = computed(() => barangStore.barangList.filter(b => b.stok <= 5).length)
+const barangFiltered = computed(() =>
+  barangStore.barangList.filter(b => b.nama.toLowerCase().includes(search.value.toLowerCase()))
+)
+
+onMounted(async () => {
+  await barangStore.fetchBarang()
+  await kategoriStore.fetchKategori()
+})
+
+function editBarang(b: any) {
+  editMode.value = true
+  editId.value = b.id
+  form.value = { nama: b.nama, harga: b.harga, stok: b.stok, kategoriId: b.kategoriId }
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  editMode.value = false
+  editId.value = null
+  form.value = { nama: '', harga: 0, stok: 0, kategoriId: '' }
+}
+
+async function simpan() {
+  if (!form.value.nama || !form.value.harga || !form.value.kategoriId) return alert('Isi semua field!')
+  loading.value = true
+  if (editMode.value && editId.value) {
+    await barangStore.updateBarang(editId.value, { ...form.value, kategoriId: Number(form.value.kategoriId) })
+  } else {
+    await barangStore.tambahBarang({ ...form.value, kategoriId: Number(form.value.kategoriId) })
+  }
+  closeModal()
+  loading.value = false
+}
+
+async function hapus(id: number) {
+  if (!confirm('Yakin hapus barang ini?')) return
+  await barangStore.hapusBarang(id)
+}
+
+function exportExcel() {
+  const data = barangStore.barangList.map((b, i) => ({
+    'No': i + 1,
+    'Nama Barang': b.nama,
+    'Kategori': b.kategori?.nama ?? '-',
+    'Harga Jual': b.harga,
+    'Stok': b.stok,
+    'Status Stok': b.stok <= 5 ? 'Hampir Habis' : 'Aman',
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(data)
+
+  ws['!cols'] = [
+    { wch: 5 },
+    { wch: 25 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 15 },
+  ]
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Stok Barang')
+
+  const tanggal = new Date().toLocaleDateString('id-ID').replace(/\//g, '-')
+  XLSX.writeFile(wb, `Stok-Barang-${tanggal}.xlsx`)
+}
+</script>
+
+<style></style>
