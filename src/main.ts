@@ -1,18 +1,10 @@
-import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
+import router from './router'
+import './assets/main.css'
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  app.enableCors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  });
-
-  app.setGlobalPrefix('api');
-
-  await app.listen(3000);
-  console.log('Backend jalan di http://localhost:3000');
-}
-bootstrap();
+const app = createApp(App)
+app.use(createPinia())
+app.use(router)
+app.mount('#app')
