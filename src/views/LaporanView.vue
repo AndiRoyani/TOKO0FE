@@ -93,7 +93,7 @@ const laporan = computed(() => transaksiStore.laporan)
 
 const rataRata = computed(() => {
   if (!laporan.value?.jumlahTransaksi) return 0
-  return Math.round(laporan.value.totalPendapatan / laporan.value.jumlahTransaksi)
+  return Math.round(Number(laporan.value.totalPendapatan) / Number(laporan.value.jumlahTransaksi))
 })
 
 onMounted(async () => {
