@@ -2,9 +2,27 @@
   <div class="flex gap-6 h-[calc(100vh-120px)]">
     <!-- Kiri: Daftar Barang -->
     <div class="flex-1 flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100">
-        <input v-model="search" placeholder="🔍 Cari barang..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
-      </div>
+      <div class="px-4 py-4 border-b border-slate-100 flex flex-col gap-3">
+  <input v-model="search" placeholder="🔍 Cari barang..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+  <div class="flex gap-2 flex-wrap">
+    <button
+      @click="filterKategori = null"
+      class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
+      :class="filterKategori === null ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+    >
+      Semua
+    </button>
+    <button
+      v-for="k in kategoriStore.kategoriList"
+      :key="k.id"
+      @click="filterKategori = k.id"
+      class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
+      :class="filterKategori === k.id ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+    >
+      {{ k.nama }}
+    </button>
+  </div>
+</div>
       <div class="flex-1 overflow-y-auto p-4">
         <div v-if="barangFiltered.length === 0" class="text-center py-16 text-slate-400 text-sm">Barang tidak ditemukan</div>
         <div class="grid grid-cols-3 gap-3">
@@ -157,9 +175,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useBarangStore } from '../stores/barang'
 import { useTransaksiStore } from '../stores/transaksi'
+import { useKategoriStore } from '../stores/kategori'
 
 const barangStore = useBarangStore()
 const transaksiStore = useTransaksiStore()
+
+const kategoriStore = useKategoriStore()
+const filterKategori = ref<number | null>(null)
 
 const search = ref('')
 const cart = ref<any[]>([])
@@ -172,10 +194,17 @@ const nominalCepat = [5000, 10000, 20000, 50000, 100000, 200000]
 
 const strukData = ref({ items: [] as any[], total: 0, bayar: 0, kembalian: 0 })
 
-onMounted(() => barangStore.fetchBarang())
+onMounted(async () => {
+  await barangStore.fetchBarang()
+  await kategoriStore.fetchKategori()
+})
 
 const barangFiltered = computed(() =>
-  barangStore.barangList.filter(b => b.nama.toLowerCase().includes(search.value.toLowerCase()))
+  barangStore.barangList.filter(b => {
+    const matchSearch = b.nama.toLowerCase().includes(search.value.toLowerCase())
+    const matchKategori = filterKategori.value === null || b.kategoriId === filterKategori.value
+    return matchSearch && matchKategori
+  })
 )
 
 const total = computed(() => cart.value.reduce((s, i) => s + i.harga * i.qty, 0))
@@ -232,6 +261,10 @@ function removeFromCart(cartId: string) {
 }
 
 async function proses() {
+    console.log('proses dipanggil')
+  console.log('cart:', cart.value)
+  console.log('total:', total.value)
+  console.log('bayar:', bayar.value)
   loading.value = true
   try {
     const itemsBungkus = cart.value
