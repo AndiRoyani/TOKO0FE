@@ -10,7 +10,7 @@
         <div class="flex items-center gap-3 overflow-hidden">
           <div class="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-lg shadow-lg shrink-0">🏪</div>
           <div v-if="sidebarOpen" class="overflow-hidden">
-            <div class="text-white font-bold text-sm leading-tight whitespace-nowrap">Warung Saya</div>
+            <div class="text-white font-bold text-sm leading-tight whitespace-nowrap">MITRA CCL</div>
             <div class="text-slate-400 text-xs whitespace-nowrap">Manajemen Toko</div>
           </div>
         </div>

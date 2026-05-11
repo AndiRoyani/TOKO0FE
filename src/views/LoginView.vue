@@ -4,7 +4,7 @@
       <!-- Logo -->
       <div class="text-center mb-8">
         <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg">🏪</div>
-        <h1 class="text-white font-bold text-2xl">Warung Saya</h1>
+        <h1 class="text-white font-bold text-2xl">MITRA CCL</h1>
         <p class="text-slate-400 text-sm mt-1">Masuk untuk melanjutkan</p>
       </div>
 

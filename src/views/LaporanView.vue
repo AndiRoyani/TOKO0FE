@@ -37,8 +37,8 @@
         <div v-else class="divide-y divide-slate-50">
           <div v-for="(item, i) in laporan.terlaris" :key="i" class="flex items-center gap-4 px-6 py-3.5">
             <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
-              :class="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-slate-100 text-slate-600' : 'bg-orange-50 text-orange-600'">
-              {{ i + 1 }}
+              :class="(i as number) === 0 ? 'bg-yellow-100 text-yellow-700' : (i as number) === 1 ? 'bg-slate-100 text-slate-600' : 'bg-orange-50 text-orange-600'">
+              {{ (i as number) + 1 }}
             </div>
             <div class="flex-1 text-sm font-medium text-slate-700">{{ item.nama }}</div>
             <div class="text-sm font-semibold text-orange-500">{{ item.qty }} terjual</div>
