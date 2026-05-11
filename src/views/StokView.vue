@@ -38,7 +38,7 @@
             <th class="text-left px-6 py-3 font-medium">Nama Barang</th>
             <th class="text-left px-6 py-3 font-medium">Kategori</th>
             <th class="text-left px-6 py-3 font-medium">Harga</th>
-            <th class="text-left px-6 py-3 font-medium">Satuan Kecil</th>
+            <th class="text-left px-6 py-3 font-medium">Info Satuan</th>
             <th class="text-left px-6 py-3 font-medium">Stok</th>
             <th class="text-left px-6 py-3 font-medium">Aksi</th>
           </tr>
@@ -58,10 +58,16 @@
               <div v-if="b.hargaSatuanKecil" class="text-xs text-orange-500">
                 Rp {{ b.hargaSatuanKecil.toLocaleString('id-ID') }}/{{ b.satuanKecil }}
               </div>
+              <div v-if="b.hargaPerKg" class="text-xs text-blue-500">
+                Rp {{ b.hargaPerKg.toLocaleString('id-ID') }}/kg
+              </div>
             </td>
             <td class="px-6 py-4">
               <span v-if="b.satuanKecil" class="text-xs bg-orange-50 text-orange-600 px-2 py-1 rounded-lg">
-                1 bungkus = {{ b.jumlahPerSatuan }} {{ b.satuanKecil }}
+                🚬 1 bungkus = {{ b.jumlahPerSatuan }} {{ b.satuanKecil }}
+              </span>
+              <span v-else-if="b.hargaPerKg" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
+                ⚖️ Jual per berat
               </span>
               <span v-else class="text-xs text-slate-300">—</span>
             </td>
@@ -93,12 +99,12 @@
         <div class="flex flex-col gap-4">
           <div>
             <label class="text-xs font-medium text-slate-500 mb-1 block">Nama Barang</label>
-            <input v-model="form.nama" placeholder="Misal: Rokok Surya 12" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400" />
+            <input v-model="form.nama" placeholder="Misal: Terigu Segitiga Biru" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs font-medium text-slate-500 mb-1 block">Harga Jual (Rp)</label>
-              <input v-model.number="form.harga" type="number" placeholder="24000" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400" />
+              <input v-model.number="form.harga" type="number" placeholder="12000" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400" />
             </div>
             <div>
               <label class="text-xs font-medium text-slate-500 mb-1 block">Stok</label>
@@ -133,8 +139,35 @@
               <label class="text-xs font-medium text-slate-500 mb-1 block">Harga Per Batang (Rp)</label>
               <input v-model.number="form.hargaSatuanKecil" type="number" :placeholder="hargaPerBatangOtomatis > 0 ? 'Otomatis: ' + hargaPerBatangOtomatis : '2000'" class="w-full px-4 py-2.5 border border-orange-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 bg-white" />
               <p v-if="hargaPerBatangOtomatis > 0 && !form.hargaSatuanKecil" class="text-xs text-orange-500 mt-1">
-                💡 Otomatis: Rp {{ hargaPerBatangOtomatis.toLocaleString('id-ID') }}/batang dari harga bungkus
+                💡 Otomatis: Rp {{ hargaPerBatangOtomatis.toLocaleString('id-ID') }}/batang
               </p>
+            </div>
+          </div>
+
+          <!-- Harga per kg khusus sembako -->
+          <div v-if="isSembako" class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col gap-3">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-base">⚖️</span>
+              <span class="text-xs font-semibold text-blue-700">Pengaturan Jual Per Berat (Opsional)</span>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-500 mb-1 block">Harga Per Kg (Rp)</label>
+              <input v-model.number="form.hargaPerKg" type="number" placeholder="Misal: 12000" class="w-full px-4 py-2.5 border border-blue-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white" />
+              <p class="text-xs text-blue-500 mt-1">💡 Isi jika ingin bisa jual per 1/4 kg, 1/2 kg, dll. Kosongkan jika tidak perlu.</p>
+            </div>
+            <div v-if="form.hargaPerKg > 0" class="grid grid-cols-3 gap-2">
+              <div class="bg-white rounded-lg p-2 text-center border border-blue-100">
+                <div class="text-xs text-slate-400">1/4 kg</div>
+                <div class="text-sm font-semibold text-blue-600">Rp {{ Math.ceil(form.hargaPerKg / 4).toLocaleString('id-ID') }}</div>
+              </div>
+              <div class="bg-white rounded-lg p-2 text-center border border-blue-100">
+                <div class="text-xs text-slate-400">1/2 kg</div>
+                <div class="text-sm font-semibold text-blue-600">Rp {{ Math.ceil(form.hargaPerKg / 2).toLocaleString('id-ID') }}</div>
+              </div>
+              <div class="bg-white rounded-lg p-2 text-center border border-blue-100">
+                <div class="text-xs text-slate-400">1 kg</div>
+                <div class="text-sm font-semibold text-blue-600">Rp {{ form.hargaPerKg.toLocaleString('id-ID') }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -172,6 +205,7 @@ const form = ref({
   satuanKecil: 'batang',
   hargaSatuanKecil: 0,
   jumlahPerSatuan: 0,
+  hargaPerKg: 0,
 })
 
 const stokMenipis = computed(() => barangStore.barangList.filter(b => b.stok <= 5).length)
@@ -182,6 +216,11 @@ const barangFiltered = computed(() =>
 const isRokok = computed(() => {
   const kat = kategoriStore.kategoriList.find(k => k.id === Number(form.value.kategoriId))
   return kat?.nama?.toLowerCase().includes('rokok')
+})
+
+const isSembako = computed(() => {
+  const kat = kategoriStore.kategoriList.find(k => k.id === Number(form.value.kategoriId))
+  return kat?.nama?.toLowerCase().includes('sembako')
 })
 
 const hargaPerBatangOtomatis = computed(() => {
@@ -207,6 +246,7 @@ function editBarang(b: any) {
     satuanKecil: b.satuanKecil || 'batang',
     hargaSatuanKecil: b.hargaSatuanKecil || 0,
     jumlahPerSatuan: b.jumlahPerSatuan || 0,
+    hargaPerKg: b.hargaPerKg || 0,
   }
   showModal.value = true
 }
@@ -215,7 +255,7 @@ function closeModal() {
   showModal.value = false
   editMode.value = false
   editId.value = null
-  form.value = { nama: '', harga: 0, stok: 0, kategoriId: '', satuanKecil: 'batang', hargaSatuanKecil: 0, jumlahPerSatuan: 0 }
+  form.value = { nama: '', harga: 0, stok: 0, kategoriId: '', satuanKecil: 'batang', hargaSatuanKecil: 0, jumlahPerSatuan: 0, hargaPerKg: 0 }
 }
 
 async function simpan() {
@@ -227,16 +267,20 @@ async function simpan() {
     harga: form.value.harga,
     stok: form.value.stok,
     kategoriId: Number(form.value.kategoriId),
+    satuanKecil: null,
+    hargaSatuanKecil: null,
+    jumlahPerSatuan: null,
+    hargaPerKg: null,
   }
 
   if (isRokok.value) {
     data.satuanKecil = form.value.satuanKecil || 'batang'
     data.jumlahPerSatuan = form.value.jumlahPerSatuan
     data.hargaSatuanKecil = form.value.hargaSatuanKecil || hargaPerBatangOtomatis.value
-  } else {
-    data.satuanKecil = null
-    data.hargaSatuanKecil = null
-    data.jumlahPerSatuan = null
+  }
+
+  if (isSembako.value && form.value.hargaPerKg > 0) {
+    data.hargaPerKg = form.value.hargaPerKg
   }
 
   if (editMode.value && editId.value) {
@@ -262,6 +306,7 @@ function exportExcel() {
     'Harga Satuan Kecil': b.hargaSatuanKecil ?? '-',
     'Satuan Kecil': b.satuanKecil ?? '-',
     'Isi Per Bungkus': b.jumlahPerSatuan ?? '-',
+    'Harga Per Kg': b.hargaPerKg ?? '-',
     'Stok': b.stok,
     'Status Stok': b.stok <= 5 ? 'Hampir Habis' : 'Aman',
   }))
@@ -269,7 +314,7 @@ function exportExcel() {
   const ws = XLSX.utils.json_to_sheet(data)
   ws['!cols'] = [
     { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
-    { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 15 },
+    { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 15 }, { wch: 10 }, { wch: 15 },
   ]
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Stok Barang')

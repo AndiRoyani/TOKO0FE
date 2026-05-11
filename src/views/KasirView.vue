@@ -3,49 +3,46 @@
     <!-- Kiri: Daftar Barang -->
     <div class="flex-1 flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-100">
-        <input
-          v-model="search"
-          placeholder="🔍 Cari barang..."
-          class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-        />
+        <input v-model="search" placeholder="🔍 Cari barang..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
       </div>
       <div class="flex-1 overflow-y-auto p-4">
         <div v-if="barangFiltered.length === 0" class="text-center py-16 text-slate-400 text-sm">Barang tidak ditemukan</div>
         <div class="grid grid-cols-3 gap-3">
-          <div
-            v-for="b in barangFiltered"
-            :key="b.id"
-            class="bg-slate-50 border border-slate-100 rounded-xl p-4 transition-all"
-            :class="b.stok > 0 ? 'hover:bg-orange-50 hover:border-orange-200' : 'opacity-40'"
-          >
+          <div v-for="b in barangFiltered" :key="b.id" class="bg-slate-50 border border-slate-100 rounded-xl p-4 transition-all" :class="b.stok > 0 ? 'hover:bg-orange-50 hover:border-orange-200' : 'opacity-40'">
             <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-xl mb-3 shadow-sm">
-              {{ b.kategori?.nama?.toLowerCase().includes('rokok') ? '🚬' : '🛒' }}
+              {{ b.kategori?.nama?.toLowerCase().includes('rokok') ? '🚬' : b.hargaPerKg ? '⚖️' : '🛒' }}
             </div>
             <div class="font-semibold text-slate-700 text-sm leading-tight mb-1">{{ b.nama }}</div>
             <div class="text-orange-500 font-bold text-sm">Rp {{ b.harga.toLocaleString('id-ID') }}</div>
-            <div v-if="b.hargaSatuanKecil" class="text-xs text-slate-400 mt-0.5">
-              Rp {{ b.hargaSatuanKecil.toLocaleString('id-ID') }}/{{ b.satuanKecil }}
-            </div>
+            <div v-if="b.hargaSatuanKecil" class="text-xs text-slate-400 mt-0.5">Rp {{ b.hargaSatuanKecil.toLocaleString('id-ID') }}/{{ b.satuanKecil }}</div>
+            <div v-if="b.hargaPerKg" class="text-xs text-blue-500 mt-0.5">Rp {{ b.hargaPerKg.toLocaleString('id-ID') }}/kg</div>
             <div class="mt-1">
               <span class="text-xs px-2 py-0.5 rounded-lg" :class="b.stok <= 5 ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-600'">
-                Stok: {{ b.stok }} bungkus
+                Stok: {{ b.stok }}
               </span>
             </div>
-            <div class="mt-3 flex gap-1.5">
-              <button
-                @click="addToCart(b, 'bungkus')"
-                :disabled="b.stok <= 0"
-                class="flex-1 text-xs py-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg transition"
-              >
-                + Bungkus
+
+            <!-- Tombol jual normal -->
+            <div v-if="!b.hargaPerKg" class="mt-3 flex gap-1.5">
+              <button @click="addToCart(b, 'bungkus')" :disabled="b.stok <= 0" class="flex-1 text-xs py-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg transition">
+                + {{ b.hargaSatuanKecil ? 'Bungkus' : 'Tambah' }}
               </button>
-              <button
-                v-if="b.hargaSatuanKecil"
-                @click="addToCart(b, 'satuan')"
-                class="flex-1 text-xs py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg transition"
-              >
+              <button v-if="b.hargaSatuanKecil" @click="addToCart(b, 'satuan')" class="flex-1 text-xs py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg transition">
                 + {{ b.satuanKecil }}
               </button>
+            </div>
+
+            <!-- Tombol jual per berat -->
+            <div v-if="b.hargaPerKg" class="mt-3 flex flex-col gap-1">
+              <button @click="addToCart(b, 'bungkus')" :disabled="b.stok <= 0" class="w-full text-xs py-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg transition">
+                + 1 pcs (Rp {{ b.harga.toLocaleString('id-ID') }})
+              </button>
+              <div class="grid grid-cols-2 gap-1 mt-1">
+                <button @click="addToCartBerat(b, 0.25)" class="text-xs py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">+ 1/4 kg</button>
+                <button @click="addToCartBerat(b, 0.5)" class="text-xs py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">+ 1/2 kg</button>
+                <button @click="addToCartBerat(b, 1)" class="text-xs py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">+ 1 kg</button>
+                <button @click="addToCartBerat(b, 2)" class="text-xs py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">+ 2 kg</button>
+              </div>
             </div>
           </div>
         </div>
@@ -67,7 +64,6 @@
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-slate-700 truncate">{{ item.nama }}</div>
               <div class="text-xs text-orange-500 font-semibold">Rp {{ (item.harga * item.qty).toLocaleString('id-ID') }}</div>
-              <div v-if="item.mode === 'satuan'" class="text-xs text-slate-400">per {{ item.satuanKecil }}</div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <button @click="changeQty(item, -1)" class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-200 hover:text-red-500 flex items-center justify-center text-sm transition">−</button>
@@ -99,11 +95,7 @@
             {{ n >= 1000 ? (n / 1000) + 'rb' : n }}
           </button>
         </div>
-        <button
-          @click="proses"
-          :disabled="cart.length === 0 || kembalian < 0 || loading"
-          class="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition text-sm"
-        >
+        <button @click="proses" :disabled="cart.length === 0 || kembalian < 0 || loading" class="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition text-sm">
           {{ loading ? 'Memproses...' : '✓ Proses Pembayaran' }}
         </button>
       </div>
@@ -175,21 +167,15 @@ const bayar = ref<number>(0)
 const loading = ref(false)
 const showStruk = ref(false)
 const waktuStruk = ref('')
+const kembalianTerakhir = ref(0)
 const nominalCepat = [5000, 10000, 20000, 50000, 100000, 200000]
 
-const strukData = ref({
-  items: [] as any[],
-  total: 0,
-  bayar: 0,
-  kembalian: 0,
-})
+const strukData = ref({ items: [] as any[], total: 0, bayar: 0, kembalian: 0 })
 
 onMounted(() => barangStore.fetchBarang())
 
 const barangFiltered = computed(() =>
-  barangStore.barangList.filter(
-    b => b.nama.toLowerCase().includes(search.value.toLowerCase())
-  )
+  barangStore.barangList.filter(b => b.nama.toLowerCase().includes(search.value.toLowerCase()))
 )
 
 const total = computed(() => cart.value.reduce((s, i) => s + i.harga * i.qty, 0))
@@ -201,17 +187,12 @@ function addToCart(b: any, mode: 'bungkus' | 'satuan' = 'bungkus') {
   const existing = cart.value.find(i => i.cartId === cartId)
 
   if (isSatuan) {
-    if (existing) {
-      existing.qty++
-    } else {
+    if (existing) { existing.qty++ }
+    else {
       cart.value.push({
-        cartId,
-        barangId: b.id,
+        cartId, barangId: b.id,
         nama: b.nama + ' (per ' + b.satuanKecil + ')',
-        harga: b.hargaSatuanKecil,
-        qty: 1,
-        mode: 'satuan',
-        satuanKecil: b.satuanKecil,
+        harga: b.hargaSatuanKecil, qty: 1, mode: 'satuan',
       })
     }
   } else {
@@ -220,25 +201,29 @@ function addToCart(b: any, mode: 'bungkus' | 'satuan' = 'bungkus') {
       if (existing.qty >= b.stok) return alert('Stok tidak cukup!')
       existing.qty++
     } else {
-      cart.value.push({
-        cartId,
-        barangId: b.id,
-        nama: b.nama,
-        harga: b.harga,
-        qty: 1,
-        mode: 'bungkus',
-        satuanKecil: null,
-      })
+      cart.value.push({ cartId, barangId: b.id, nama: b.nama, harga: b.harga, qty: 1, mode: 'bungkus' })
     }
+  }
+}
+
+function addToCartBerat(b: any, kg: number) {
+  const harga = Math.ceil(b.hargaPerKg * kg)
+  const label = kg < 1 ? `${kg * 1000}gr` : `${kg}kg`
+  const cartId = `${b.id}-berat-${kg}`
+  const existing = cart.value.find(i => i.cartId === cartId)
+  if (existing) { existing.qty++ }
+  else {
+    cart.value.push({
+      cartId, barangId: b.id,
+      nama: `${b.nama} (${label})`,
+      harga, qty: 1, mode: 'berat',
+    })
   }
 }
 
 function changeQty(item: any, delta: number) {
   const newQty = item.qty + delta
-  if (newQty <= 0) {
-    cart.value = cart.value.filter(i => i.cartId !== item.cartId)
-    return
-  }
+  if (newQty <= 0) { cart.value = cart.value.filter(i => i.cartId !== item.cartId); return }
   item.qty = newQty
 }
 
@@ -249,24 +234,15 @@ function removeFromCart(cartId: string) {
 async function proses() {
   loading.value = true
   try {
-    // Hanya kirim item mode bungkus ke backend untuk kurangi stok
     const itemsBungkus = cart.value
       .filter(i => i.mode === 'bungkus')
       .map(i => ({ barangId: i.barangId, qty: i.qty }))
 
-    // Item satuan tidak kurangi stok bungkus (hanya catat penjualan)
-    const itemsSatuan = cart.value
-      .filter(i => i.mode === 'satuan')
-      .map(i => ({ barangId: i.barangId, qty: 0 }))
-
-    const items = [...itemsBungkus, ...itemsSatuan].filter(i => i.qty >= 0)
-
-    // Kirim transaksi dengan total manual
     await transaksiStore.buatTransaksiManual({
       bayar: bayar.value,
       total: total.value,
       kembalian: kembalian.value,
-      items: itemsBungkus, // hanya bungkus yang kurangi stok
+      items: itemsBungkus,
       detail: cart.value.map(i => ({
         barangId: i.barangId,
         qty: i.qty,
@@ -277,16 +253,16 @@ async function proses() {
 
     await barangStore.fetchBarang()
     kembalianTerakhir.value = kembalian.value
+    waktuStruk.value = new Date().toLocaleString('id-ID', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    })
     strukData.value = {
       items: cart.value.map(i => ({ ...i })),
       total: total.value,
       bayar: bayar.value,
       kembalian: kembalian.value,
     }
-    waktuStruk.value = new Date().toLocaleString('id-ID', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    })
     cart.value = []
     bayar.value = 0
     showStruk.value = true
@@ -296,12 +272,9 @@ async function proses() {
   loading.value = false
 }
 
-const kembalianTerakhir = ref(0)
-
 function cetakStruk() {
   const win = window.open('', '_blank', 'width=220,height=600')
   if (!win) return
-
   const garis = '--------------------------------'
   const garisTebal = '================================'
   const padLeft = (str: string, len: number) => str.toString().padStart(len)
@@ -340,8 +313,7 @@ function cetakStruk() {
         <div class="bold">${padRight('Kembali', 20)}${padLeft('Rp ' + strukData.value.kembalian.toLocaleString('id-ID'), 12)}</div>
         <pre>${garisTebal}</pre>
         <div class="center" style="margin-top:4px;font-size:11px">Terima kasih telah berbelanja!</div>
-        <div class="center" style="font-size:11px">Barang yang sudah dibeli</div>
-        <div class="center" style="font-size:11px">tidak dapat dikembalikan</div>
+        <div class="center" style="font-size:11px">Barang yang sudah dibeli tidak dapat dikembalikan</div>
         <pre>${garis}</pre>
         <div class="center bold">*** SELAMAT BERBELANJA ***</div>
       </body>
